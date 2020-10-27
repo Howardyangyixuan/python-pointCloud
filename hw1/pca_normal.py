@@ -16,7 +16,13 @@ import numpy as np
 def PCA(data, correlation=False, sort=True):
     # 作业1
     # 屏蔽开始
-
+    #1.标准化
+    x_avg = np.mean(data,axis=0)
+    x = data - x_avg
+    #2.求协方差矩阵特征值特征向量
+    xt = np.transpose(x)
+    h = np.matmul(xt,x)
+    eigenvalues, eigenvectors = np.linalg.eig(h)
     # 屏蔽结束
 
     if sort:
@@ -59,12 +65,15 @@ def main():
     # 显示点数
     print('total points number is:', points.shape[0])
 
-    # 用PCA分析点云主方向
+    # 用PCA分析点云主方向,这里取2个
     w, v = PCA(points)
-    point_cloud_vector = v[:, 2]  # 点云主方向对应的向量
+    point_cloud_vector = v[:, :2]  # 点云主方向对应的向量
     print('the main orientation of this pointcloud is: ', point_cloud_vector)
-    # TODO: 此处只显示了点云，还没有显示PCA
-    # o3d.visualization.draw_geometries([point_cloud_o3d])
+    # PCA
+    pca_encoder = np.matmul(points,point_cloud_vector)
+    pca_decoder = np.matmul(pca_encoder,np.transpose(point_cloud_vector))
+    # 显示PCA后结果
+    visualize_pc(pca_decoder)
 
     # 循环计算每个点的法向量
     pcd_tree = o3d.geometry.KDTreeFlann(points)
