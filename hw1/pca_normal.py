@@ -34,9 +34,11 @@ def numpy_read_txt(pc_txt_path):
     return pc
 
 
-def visualize_pc(pc):
+def visualize_pc(pc, normals=None):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(pc)
+    if normals:
+        pcd.normals = normals
     o3d.visualization.draw_geometries([pcd])
 
 
@@ -48,12 +50,13 @@ def main():
     # filename = os.path.join(root_dir, cat[cat_index],'train', cat[cat_index]+'_0001.ply') # 默认使用第一个点云
 
     # 加载原始点云
-    point_cloud_pynt = PyntCloud.from_file("/Users/renqian/Downloads/program/cloud_data/11.ply")
-    point_cloud_o3d = point_cloud_pynt.to_instance("open3d", mesh=False)
-    # o3d.visualization.draw_geometries([point_cloud_o3d]) # 显示原始点云
+    pc_txt_path = "./test.txt"
+    points = numpy_read_txt(pc_txt_path)
 
-    # 从点云中获取点，只对点进行处理
-    points = point_cloud_pynt.points
+    # 显示原始点云
+    visualize_pc(points)
+
+    # 显示点数
     print('total points number is:', points.shape[0])
 
     # 用PCA分析点云主方向
@@ -64,7 +67,7 @@ def main():
     # o3d.visualization.draw_geometries([point_cloud_o3d])
 
     # 循环计算每个点的法向量
-    pcd_tree = o3d.geometry.KDTreeFlann(point_cloud_o3d)
+    pcd_tree = o3d.geometry.KDTreeFlann(points)
     normals = []
     # 作业2
     # 屏蔽开始
@@ -74,8 +77,7 @@ def main():
     # 屏蔽结束
     normals = np.array(normals, dtype=np.float64)
     # TODO: 此处把法向量存放在了normals中
-    point_cloud_o3d.normals = o3d.utility.Vector3dVector(normals)
-    o3d.visualization.draw_geometries([point_cloud_o3d])
+    visualize_pc(points,normals)
 
 
 if __name__ == '__main__':
