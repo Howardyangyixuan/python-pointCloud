@@ -1,9 +1,8 @@
 # 实现voxel滤波，并加载数据集中的文件进行验证
 
-import open3d as o3d 
-import os
+import open3d as o3d
 import numpy as np
-from pyntcloud import PyntCloud
+
 
 # 功能：对点云进行voxel滤波
 # 输入：
@@ -30,7 +29,7 @@ def main():
     # point_cloud_pynt = PyntCloud.from_file(file_name)
 
     # 加载自己的点云文件
-    file_name = "/Users/renqian/Downloads/program/cloud_data/11.ply"
+    file_name = "./test.txt"
     point_cloud_pynt = PyntCloud.from_file(file_name)
 
     # 转成open3d能识别的格式

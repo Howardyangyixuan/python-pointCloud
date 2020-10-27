@@ -1,8 +1,8 @@
 # 实现PCA分析和法向量计算，并加载数据集中的文件进行验证
 
 import open3d as o3d
-import os
 import numpy as np
+import pcio as pcio
 
 
 # 功能：计算PCA的函数
@@ -33,19 +33,7 @@ def PCA(data, correlation=False, sort=True):
     return eigenvalues, eigenvectors
 
 
-def numpy_read_txt(pc_txt_path):
-    data = np.genfromtxt(pc_txt_path, delimiter=',')
-    # 原数据中,有法向量,只取前3个
-    pc = data[:, :3]
-    return pc
 
-
-def visualize_pc(pc, normals=None):
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(pc)
-    if normals is not None:
-        pcd.normals = o3d.utility.Vector3dVector(normals)
-    o3d.visualization.draw_geometries([pcd])
 
 
 def main():
@@ -57,10 +45,10 @@ def main():
 
     # 加载原始点云
     pc_txt_path = "./test.txt"
-    points = numpy_read_txt(pc_txt_path)
+    points = pcio.numpy_read_txt(pc_txt_path)
 
     # 显示原始点云
-    # visualize_pc(points)
+    pcio.visualize_pc(points)
 
     # 显示点数
     print('total points number is:', points.shape[0])
@@ -73,7 +61,7 @@ def main():
     pca_encoder = np.matmul(points, point_cloud_vector)
     pca_decoder = np.matmul(pca_encoder, np.transpose(point_cloud_vector))
     # 显示PCA后结果
-    # visualize_pc(pca_decoder)
+    pcio.visualize_pc(pca_decoder)
 
     # 循环计算每个点的法向量
     pcd = o3d.geometry.PointCloud()
@@ -94,7 +82,7 @@ def main():
     # 屏蔽结束
     normals = np.array(normals, dtype=np.float64)
     # TODO: 此处把法向量存放在了normals中
-    visualize_pc(points, normals)
+    pcio.visualize_pc(points, normals)
 
 
 if __name__ == '__main__':
