@@ -2,6 +2,7 @@
 
 import open3d as o3d
 import numpy as np
+import pcio
 
 
 # 功能：对点云进行voxel滤波
@@ -12,13 +13,39 @@ def voxel_filter(point_cloud, leaf_size):
     filtered_points = []
     # 作业3
     # 屏蔽开始
+    border = []
+    D = []
+    index = []
+    for i in range(3):
+        border.append([np.max(point_cloud[:, i]), np.min(point_cloud[:, i])])
+        D.append(((border[i][0] - border[i][1]) / leaf_size))
 
- 
+    for i in range(point_cloud.shape[0]):
+        tmp = []
+        for j in range(3):
+            tmp.append(np.floor(point_cloud[i][j] / D[j]))
+        h = int(tmp[0] + tmp[1] * leaf_size + tmp[2] * leaf_size * leaf_size)%5000
+        index.append([h, i])
+    index.sort()
+    mark = index[0][0]
+    pcs = []
+    pcs.append(index[0][1])
+    for i in range(len(index)):
+        if index[i][0] != mark:
+            idx = np.random.randint(0, len(pcs))
+            filtered_points.append(point_cloud[pcs[idx]])
+            pcs = []
+            mark = index[i][0]
+            pcs.append(index[i][1])
+        else:
+            pcs.append(index[i][1])
+
     # 屏蔽结束
 
     # 把点云格式改成array，并对外返回
     filtered_points = np.array(filtered_points, dtype=np.float64)
     return filtered_points
+
 
 def main():
     # # 从ModelNet数据集文件夹中自动索引路径，加载点云
@@ -30,17 +57,14 @@ def main():
 
     # 加载自己的点云文件
     file_name = "./test.txt"
-    point_cloud_pynt = PyntCloud.from_file(file_name)
-
-    # 转成open3d能识别的格式
-    point_cloud_o3d = point_cloud_pynt.to_instance("open3d", mesh=False)
-    # o3d.visualization.draw_geometries([point_cloud_o3d]) # 显示原始点云
+    points = pcio.numpy_read_txt(file_name)
+    # pcio.visualize_pc(points)
 
     # 调用voxel滤波函数，实现滤波
-    filtered_cloud = voxel_filter(point_cloud_pynt.points, 100.0)
-    point_cloud_o3d.points = o3d.utility.Vector3dVector(filtered_cloud)
+    filtered_cloud = voxel_filter(points, 100.0)
     # 显示滤波后的点云
-    o3d.visualization.draw_geometries([point_cloud_o3d])
+    pcio.visualize_pc(filtered_cloud)
+
 
 if __name__ == '__main__':
     main()
