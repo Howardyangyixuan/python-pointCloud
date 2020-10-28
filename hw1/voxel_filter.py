@@ -11,11 +11,14 @@ import pcio
 #     leaf_size: voxel尺寸
 def voxel_filter(point_cloud, leaf_size):
     filtered_points = []
+    container_size = 1000
     # 作业3
     # 屏蔽开始
     border = []
     D = []
     index = []
+    hash = [([] * 3) for i in range(container_size)]
+
     for i in range(3):
         border.append([np.max(point_cloud[:, i]), np.min(point_cloud[:, i])])
         D.append(((border[i][0] - border[i][1]) / leaf_size))
@@ -25,21 +28,22 @@ def voxel_filter(point_cloud, leaf_size):
         for j in range(3):
             tmp.append(np.floor(point_cloud[i][j] / D[j]))
         h = int(tmp[0] + tmp[1] * leaf_size + tmp[2] * leaf_size * leaf_size)
-        index.append([h, i])
-    index.sort()
-    mark = index[0][0]
-    pcs = []
-    pcs.append(index[0][1])
-    for i in range(len(index)):
-        if index[i][0] != mark:
-            idx = np.random.randint(0, len(pcs))
-            filtered_points.append(point_cloud[pcs[idx]])
-            pcs = []
-            mark = index[i][0]
-            pcs.append(index[i][1])
+        h = h % container_size
+        if len(hash[h]) != 0 and (tmp[0] != hash[h][0][0] or tmp[1] != hash[h][0][1] or tmp[2] != hash[h][0][2]):
+            # if len(hash[h]) != 0:
+            rand = np.random.randint(0, len(hash[h]))
+            idx = int(hash[h][rand][3])
+            filtered_points.append(point_cloud[idx])
+            hash[h] = []
         else:
-            pcs.append(index[i][1])
+            arr = np.concatenate((tmp, [i]), axis=None)
+            hash[h].append(arr)
 
+    for i in range(container_size):
+        if len(hash[i]) != 0:
+            rand = np.random.randint(0, len(hash[i]))
+            idx = int(hash[i][rand][3])
+            filtered_points.append(point_cloud[idx])
     # 屏蔽结束
 
     # 把点云格式改成array，并对外返回
@@ -61,7 +65,7 @@ def main():
     # pcio.visualize_pc(points)
 
     # 调用voxel滤波函数，实现滤波
-    filtered_cloud = voxel_filter(points, 50.0)
+    filtered_cloud = voxel_filter(points, 10.0)
     # 显示滤波后的点云
     pcio.visualize_pc(filtered_cloud)
 
