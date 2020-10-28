@@ -24,7 +24,7 @@ def voxel_filter(point_cloud, leaf_size):
         tmp = []
         for j in range(3):
             tmp.append(np.floor(point_cloud[i][j] / D[j]))
-        h = int(tmp[0] + tmp[1] * leaf_size + tmp[2] * leaf_size * leaf_size)%5000
+        h = int(tmp[0] + tmp[1] * leaf_size + tmp[2] * leaf_size * leaf_size)
         index.append([h, i])
     index.sort()
     mark = index[0][0]
@@ -61,7 +61,7 @@ def main():
     # pcio.visualize_pc(points)
 
     # 调用voxel滤波函数，实现滤波
-    filtered_cloud = voxel_filter(points, 100.0)
+    filtered_cloud = voxel_filter(points, 50.0)
     # 显示滤波后的点云
     pcio.visualize_pc(filtered_cloud)
 
