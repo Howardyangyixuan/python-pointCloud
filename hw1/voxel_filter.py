@@ -1,6 +1,7 @@
 # 实现voxel滤波，并加载数据集中的文件进行验证
 
 import open3d as o3d
+import os
 import numpy as np
 import pcio
 
@@ -11,13 +12,13 @@ import pcio
 #     leaf_size: voxel尺寸
 def voxel_filter(point_cloud, leaf_size):
     filtered_points = []
-    container_size = 1000
+    container_size = 500
     # 作业3
     # 屏蔽开始
     border = []
     D = []
     index = []
-    hash = [([] * 3) for i in range(container_size)]
+    hash_table = [([] * 3) for i in range(container_size)]
 
     for i in range(3):
         border.append([np.max(point_cloud[:, i]), np.min(point_cloud[:, i])])
@@ -29,20 +30,20 @@ def voxel_filter(point_cloud, leaf_size):
             tmp.append(np.floor(point_cloud[i][j] / D[j]))
         h = int(tmp[0] + tmp[1] * leaf_size + tmp[2] * leaf_size * leaf_size)
         h = h % container_size
-        if len(hash[h]) != 0 and (tmp[0] != hash[h][0][0] or tmp[1] != hash[h][0][1] or tmp[2] != hash[h][0][2]):
-            # if len(hash[h]) != 0:
-            rand = np.random.randint(0, len(hash[h]))
-            idx = int(hash[h][rand][3])
+        if len(hash_table[h]) != 0 and (tmp[0] != hash_table[h][0][0] or tmp[1] != hash_table[h][0][1] or tmp[2] != hash_table[h][0][2]):
+            # if len(hash_table[h]) != 0:
+            rand = np.random.randint(0, len(hash_table[h]))
+            idx = int(hash_table[h][rand][3])
             filtered_points.append(point_cloud[idx])
-            hash[h] = []
+            hash_table[h] = []
         else:
             arr = np.concatenate((tmp, [i]), axis=None)
-            hash[h].append(arr)
+            hash_table[h].append(arr)
 
     for i in range(container_size):
-        if len(hash[i]) != 0:
-            rand = np.random.randint(0, len(hash[i]))
-            idx = int(hash[i][rand][3])
+        if len(hash_table[i]) != 0:
+            rand = np.random.randint(0, len(hash_table[i]))
+            idx = int(hash_table[i][rand][3])
             filtered_points.append(point_cloud[idx])
     # 屏蔽结束
 
@@ -54,15 +55,15 @@ def voxel_filter(point_cloud, leaf_size):
 def main():
     # # 从ModelNet数据集文件夹中自动索引路径，加载点云
     # cat_index = 10 # 物体编号，范围是0-39，即对应数据集中40个物体
-    # root_dir = '/Users/renqian/cloud_lesson/ModelNet40/ply_data_points' # 数据集路径
+    # root_dir = 'C:\\Users\\howardyangyixuan\\pointCloud\\modelnet40_normal_resampled' # 数据集路径
     # cat = os.listdir(root_dir)
-    # filename = os.path.join(root_dir, cat[cat_index],'train', cat[cat_index]+'_0001.ply') # 默认使用第一个点云
-    # point_cloud_pynt = PyntCloud.from_file(file_name)
+    # filename = os.path.join(root_dir, cat[cat_index], cat[cat_index]+'_0001.txt') # 默认使用第一个点云
+    # points = pcio.numpy_read_txt(filename)
 
     # 加载自己的点云文件
     file_name = "./test.txt"
     points = pcio.numpy_read_txt(file_name)
-    # pcio.visualize_pc(points)
+    pcio.visualize_pc(points)
 
     # 调用voxel滤波函数，实现滤波
     filtered_cloud = voxel_filter(points, 10.0)
