@@ -66,6 +66,8 @@ def axis_round_robin(axis, dim):
 #     leaf_size: scalar
 # 输出：
 #     root: 即构建完成的树
+
+## 思路：自上而下，递归建立，初始传入root为空，db为所有点云，point——indices为需要处理的点云子集的idx,axis为此次选择分割的轴，leaf_size叶子节点大小
 def kdtree_recursive_build(root, db, point_indices, axis, leaf_size):
     if root is None:
         root = Node(axis, None, None, None, point_indices)
@@ -73,12 +75,33 @@ def kdtree_recursive_build(root, db, point_indices, axis, leaf_size):
     # determine whether to split into left and right
     if len(point_indices) > leaf_size:
         # --- get the split position ---
+        # 按照此次设定的轴对点云数据排序
         point_indices_sorted, _ = sort_key_by_value(point_indices, db[point_indices, axis])  # M
 
         # 作业1
         # 屏蔽开始
-        point_indices_sorted =
+        # 1.采用划分不过点的方式进行建树，因此需要找到中间位置
+        # 1.1 找到排序中间位置左侧点的idx，从点云中检索该点，并得到其对应轴的坐标
+        middle_left_idx = math.ceil(point_indices_sorted.shape[0] / 2) - 1
+        middle_left_point_idx = point_indices_sorted[middle_left_idx]
+        middle_left_point_value = db[middle_left_point_idx, axis]
 
+        # 1.2 同理，找到中间右侧的点
+        middle_right_idx = middle_left_idx + 1
+        middle_right_point_idx = point_indices_sorted[middle_right_idx]
+        middle_right_point_value = db[middle_right_point_idx, axis]
+
+        # 1.3 得到中间位置，并记录
+        root.value = (middle_left_point_value + middle_right_point_value) * 0.5
+
+        # 2. 为完成划分，为得到root的左右节点，递归建树
+        # 2.1 建立左节点，根据本次划分，将点分开，注意因为db即点云为N*d，所以dim的范围为db.shape[1]即d
+        root.left = kdtree_recursive_build(root.left, db, point_indices_sorted[0:middle_left_idx + 1],
+                                           axis_round_robin(axis, dim=db.shape[1]), leaf_size)
+
+        # 2.2 建立右节点，同理
+        root.right = kdtree_recursive_build(root.right, db, point_indices_sorted[middle_right_idx:],
+                                            axis_round_robin(axis, dim=db.shape[1]), leaf_size)
         # 屏蔽结束
     return root
 
