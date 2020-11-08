@@ -25,7 +25,7 @@ class Octant:
         output += 'point_indices: ' + str(self.point_indices)
         return output
 
-# 功能：翻转octree
+# 功能：遍历octree
 # 输入：
 #     root: 构建好的octree
 #     depth: 当前深度
@@ -54,19 +54,51 @@ def traverse_octree(root: Octant, depth, max_depth):
 #     leaf_size: scale
 #     min_extent: 最小分割区间
 def octree_recursive_build(root, db, center, extent, point_indices, leaf_size, min_extent):
+    # 没有剩余的点，划分完毕
     if len(point_indices) == 0:
         return None
 
+    # 生成根节点
     if root is None:
         root = Octant([None for i in range(8)], center, extent, point_indices, is_leaf=True)
 
     # determine whether to split this octant
+    # 划分停止条件
+    #   1. 节点数满足leaf size
+    #   2. 边长小于最小边长
     if len(point_indices) <= leaf_size or extent <= min_extent:
         root.is_leaf = True
+    #思路:按照区域将剩余节点逐个划分到8个子节点中,确定子节点中心和边长后，递归划分
     else:
         # 作业4
         # 屏蔽开始
-        
+        root.is_leaf = False
+        # 1. 划分节点
+        # 1.1 生成8个子节点的点集
+        children_point_indices = [[] for i in range(8)]
+        # 1.2 通过与中心的位置进行划分
+        for point_idx in point_indices:
+            # 获取点的坐标
+            point_db = db[point_idx]
+            # 记录区域，利用莫顿码，将三维转换到一维,其实就是记录8个区域，但非常巧妙
+            morton_code = 0
+            if point_db[0] > center[0]:
+                morton_code = morton_code | 1
+            if point_db[1] > center[1]:
+                morton_code = morton_code | 2
+            if point_db[2] > center[2]:
+                morton_code = morton_code | 4
+            children_point_indices[morton_code].append(point_idx)
+
+        # 2. 创建子节点
+        factor = [-0.5, 0.5]
+        for i in range(8):
+            children_x_center = center[0] + factor[(i & 1) > 0] * extent
+            children_y_center = center[1] + factor[(i & 2) > 0] * extent
+            children_z_center = center[2] + factor[(i & 4) > 0] * extent
+            child_extent = extent / 2
+            child_center = np.asarray([children_x_center,children_y_center,children_z_center])
+            root.children[i] = octree_recursive_build(root.children[i],db,child_center,child_extent,children_point_indices[i],leaf_size,min_extent)
         # 屏蔽结束
     return root
 
