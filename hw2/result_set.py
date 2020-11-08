@@ -82,9 +82,11 @@ class RadiusNNResultSet:
     def size(self):
         return self.count
 
+    #返回最差距离，这里是定值
     def worstDist(self):
         return self.radius
 
+    #加入判断算法更加简单，只要在半径内就加入结果集
     def add_point(self, dist, index):
         self.comparison_counter += 1
         if dist > self.radius:
