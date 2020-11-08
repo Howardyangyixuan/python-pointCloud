@@ -31,7 +31,7 @@ def main():
     k = 8
     radius = 1
 
-    root_dir = '/c/Users/howardyangyixuan/pointCloud//kitti' # 数据集路径
+    root_dir = 'C:\\Users\\howardyangyixuan\\pointCloud\\kitti' # 数据集路径
     cat = os.listdir(root_dir)
     iteration_num = len(cat)
 
