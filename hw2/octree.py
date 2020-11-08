@@ -207,9 +207,37 @@ def octree_radius_search_fast(root: Octant, db: np.ndarray, result_set: RadiusNN
     # 作业5
     # 提示：尽量利用上面的inside、overlaps、contains等函数
     # 屏蔽开始
+    # 如果包含在某一个立方体里，无需检查其他立方体
+    if contains(query, result_set.worstDist(), root):
+        leaf_points = db[root.point_indices, :]
+        diff = np.linalg.norm(np.expand_dims(query, 0) - leaf_points, axis=1)
+        for i in range(diff.shape[0]):
+            result_set.add_point(diff[i], root.point_indices[i])
+        return False
 
+    # 和原来一致
+    if root.is_leaf and len(root.point_indices) > 0:
+        # compare the contents of a leaf
+        leaf_points = db[root.point_indices, :]
+        diff = np.linalg.norm(np.expand_dims(query, 0) - leaf_points, axis=1)
+        for i in range(diff.shape[0]):
+            result_set.add_point(diff[i], root.point_indices[i])
+        # check whether we can stop search now
+        return inside(query, result_set.worstDist(), root)
+
+    for c, child in enumerate(root.children):
+        # 跳过空节点
+        if child is None:
+            continue
+        # 跳过没有交集的节点
+        if not overlaps(query, result_set.worstDist(), child):
+            continue
+        # 继续搜索
+        if octree_radius_search(child, db, result_set, query):
+            return True
     # 屏蔽结束
 
+    # final check of if we can stop search
     return inside(query, result_set.worstDist(), root)
 
 
@@ -366,14 +394,14 @@ def main():
     # print(result_set)
     print("Search takes %.3fms\n" % ((time.time() - begin_t) * 1000))
 
-    # begin_t = time.time()
-    # print("Radius search fast:")
-    # for i in range(100):
-    #     query = np.random.rand(3)
-    #     result_set = RadiusNNResultSet(radius=0.5)
-    #     octree_radius_search_fast(root, db_np, result_set, query)
-    # # print(result_set)
-    # print("Search takes %.3fms\n" % ((time.time() - begin_t) * 1000))
+    begin_t = time.time()
+    print("Radius search fast:")
+    for i in range(100):
+        query = np.random.rand(3)
+        result_set = RadiusNNResultSet(radius=0.5)
+        octree_radius_search_fast(root, db_np, result_set, query)
+    # print(result_set)
+    print("Search takes %.3fms\n" % ((time.time() - begin_t) * 1000))
 
 
 if __name__ == '__main__':
