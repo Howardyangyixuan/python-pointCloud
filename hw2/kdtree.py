@@ -117,9 +117,9 @@ def traverse_kdtree(root: Node, depth, max_depth):
         max_depth[0] = depth[0]
 
     if root.is_leaf():
-        print(depth[0]*"-"+str(root))
+        print(depth[0] * "-" + str(root))
     else:
-        print(depth[0]*"-"+str(root))
+        print(depth[0] * "-" + str(root))
         traverse_kdtree(root.left, depth, max_depth)
         traverse_kdtree(root.right, depth, max_depth)
 
@@ -153,10 +153,12 @@ def kdtree_construction(db_np, leaf_size):
 #     query：索引信息
 # 输出：
 #     搜索失败则返回False
+# 思路: 当没到达叶子节点时，沿着树一直下降到达检索点所在叶子节点（区域），向上返回，如果目标点到某一边界的距离小于最小距离，进入该区域继续检索(注意：我认为这里的检索判断也是一种提前终止)
 def kdtree_knn_search(root: Node, db: np.ndarray, result_set: KNNResultSet, query: np.ndarray):
     if root is None:
         return False
 
+    # 到达叶子区域，将所有点更新进入worst distance
     if root.is_leaf():
         # compare the contents of a leaf
         leaf_points = db[root.point_indices, :]
@@ -168,7 +170,21 @@ def kdtree_knn_search(root: Node, db: np.ndarray, result_set: KNNResultSet, quer
     # 作业2
     # 提示：仍通过递归的方式实现搜索
     # 屏蔽开始
+    # 1. 自顶向下定位，直到到达叶子区域
+    # 2. 向上返回时，如果出现目标点到另一侧边界的距离小于最小距离,继续向下搜索
+    # 1.1 目标点在轴的左侧（即小于轴值的那一侧），继续搜索
+    if query[root.axis] <= root.value:
+        kdtree_knn_search(root.left, db, result_set, query)
+        # 2.1 向上返回，如果出现目标点到另一侧边界的距离小于最小距离,继续向下
+        if (math.fabs(query[root.axis] - root.value)) < result_set.worstDist():
+            kdtree_knn_search(root.right, db, result_set, query)
 
+    # 1.2 目标点在另一侧，同理
+    else:
+        kdtree_knn_search(root.right, db, result_set, query)
+        # 2.2 向上返回时，knn结果可能在另一侧，同理
+        if (math.fabs(query[root.axis] - root.value)) < result_set.worstDist():
+            kdtree_knn_search(root.left, db, result_set, query)
     # 屏蔽结束
 
     return False
@@ -208,7 +224,7 @@ def main():
     db_size = 64
     dim = 3
     leaf_size = 4
-    k = 1
+    k = 4
 
     db_np = np.random.rand(db_size, dim)
 
@@ -219,11 +235,11 @@ def main():
     traverse_kdtree(root, depth, max_depth)
     print("tree max depth: %d" % max_depth[0])
 
-    # query = np.asarray([0, 0, 0])
-    # result_set = KNNResultSet(capacity=k)
-    # knn_search(root, db_np, result_set, query)
-    #
-    # print(result_set)
+    query = np.asarray([0, 0, 0])
+    result_set = KNNResultSet(capacity=k)
+    kdtree_knn_search(root, db_np, result_set, query)
+
+    print(result_set)
     #
     # diff = np.linalg.norm(np.expand_dims(query, 0) - db_np, axis=1)
     # nn_idx = np.argsort(diff)
