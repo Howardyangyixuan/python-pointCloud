@@ -234,6 +234,26 @@ def octree_radius_search(root: Octant, db: np.ndarray, result_set: RadiusNNResul
 
     # 作业6
     # 屏蔽开始
+    morton_code = 0
+    if query[0] > root.center[0]:
+        morton_code = morton_code | 1
+    if query[1] > root.center[1]:
+        morton_code = morton_code | 2
+    if query[2] > root.center[2]:
+        morton_code = morton_code | 4
+    if octree_radius_search(root.children[morton_code], db, result_set, query):
+        return True
+    else:
+        for c, child in enumerate(root.children):
+            # 跳过空节点 和 已经检索过的节点
+            if c == morton_code or child is None:
+                continue
+            # 跳过没有交集的节点
+            if not overlaps(query, result_set.worstDist(), child):
+                continue
+            # 继续搜索
+            if octree_radius_search(child, db, result_set, query):
+                return True
     # 屏蔽结束
 
     # final check of if we can stop search
@@ -272,16 +292,17 @@ def octree_knn_search(root: Octant, db: np.ndarray, result_set: KNNResultSet, qu
         morton_code = morton_code | 4
     if octree_knn_search(root.children[morton_code], db, result_set, query):
         return True
-    for c, child in enumerate(root.children):
-        # 跳过空节点 和 已经检索过的节点
-        if c == morton_code or child is None:
-            continue
-        # 跳过没有交集的节点
-        if not overlaps(query, result_set.worstDist(), child):
-            continue
-        # 继续搜索
-        if octree_knn_search(child, db, result_set, query):
-            return True
+    else:
+        for c, child in enumerate(root.children):
+            # 跳过空节点 和 已经检索过的节点
+            if c == morton_code or child is None:
+                continue
+            # 跳过没有交集的节点
+            if not overlaps(query, result_set.worstDist(), child):
+                continue
+            # 继续搜索
+            if octree_knn_search(child, db, result_set, query):
+                return True
     # 屏蔽结束
 
     # final check of if we can stop search
@@ -336,15 +357,15 @@ def main():
     print(nn_idx[0:k])
     print(nn_dist[0:k])
 
-    # begin_t = time.time()
-    # print("Radius search normal:")
-    # for i in range(100):
-    #     query = np.random.rand(3)
-    #     result_set = RadiusNNResultSet(radius=0.5)
-    #     octree_radius_search(root, db_np, result_set, query)
-    # # print(result_set)
-    # print("Search takes %.3fms\n" % ((time.time() - begin_t) * 1000))
-    #
+    begin_t = time.time()
+    print("Radius search normal:")
+    for i in range(100):
+        query = np.random.rand(3)
+        result_set = RadiusNNResultSet(radius=0.5)
+        octree_radius_search(root, db_np, result_set, query)
+    # print(result_set)
+    print("Search takes %.3fms\n" % ((time.time() - begin_t) * 1000))
+
     # begin_t = time.time()
     # print("Radius search fast:")
     # for i in range(100):
