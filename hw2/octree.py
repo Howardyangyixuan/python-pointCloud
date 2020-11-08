@@ -109,6 +109,7 @@ def octree_recursive_build(root, db, center, extent, point_indices, leaf_size, m
 #     octant：octree
 # 输出：
 #     判断结果，即True/False
+# 思想：点到中心距离 + 半径 是否小于 边长，内接圆
 def inside(query: np.ndarray, radius: float, octant:Octant):
     """
     Determines if the query ball is inside the octant
@@ -137,18 +138,22 @@ def overlaps(query: np.ndarray, radius: float, octant:Octant):
     :param octant:
     :return:
     """
+    # 点到中心距离
     query_offset = query - octant.center
     query_offset_abs = np.fabs(query_offset)
 
     # completely outside, since query is outside the relevant area
+    # !!!注意：这里是如果点到中心的任何一个分量 大于 半径+边长 那么区域一定在立方体外，即不重叠
     max_dist = radius + octant.extent
     if np.any(query_offset_abs > max_dist):
         return False
 
     # if pass the above check, consider the case that the ball is contacting the face of the octant
+    # 同理，如果向量中有两个值都小于边长，那么一定与面接触，即三视图中，有两个视图中重叠，那么一定与面有接触
     if np.sum((query_offset_abs < octant.extent).astype(np.int)) >= 2:
         return True
 
+    # 最后考虑 角和边界
     # conside the case that the ball is contacting the edge or corner of the octant
     # since the case of the ball center (query) inside octant has been considered,
     # we only consider the ball center (query) outside octant
@@ -166,6 +171,7 @@ def overlaps(query: np.ndarray, radius: float, octant:Octant):
 #     octant：octree
 # 输出：
 #     判断结果，即True/False
+# 点到中心距离 + 边长 是否小于 半径，外切圆
 def contains(query: np.ndarray, radius: float, octant:Octant):
     """
     Determine if the query ball contains the octant
@@ -177,6 +183,7 @@ def contains(query: np.ndarray, radius: float, octant:Octant):
     query_offset = query - octant.center
     query_offset_abs = np.fabs(query_offset)
 
+    #
     query_offset_to_farthest_corner = query_offset_abs + octant.extent
     return np.linalg.norm(query_offset_to_farthest_corner) < radius
 
