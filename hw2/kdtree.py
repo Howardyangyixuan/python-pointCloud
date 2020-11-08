@@ -67,7 +67,7 @@ def axis_round_robin(axis, dim):
 # 输出：
 #     root: 即构建完成的树
 
-## 思路：自上而下，递归建立，初始传入root为空，db为所有点云，point——indices为需要处理的点云子集的idx,axis为此次选择分割的轴，leaf_size叶子节点大小
+# 思路：自上而下，递归建立，初始传入root为空，db为所有点云，point——indices为需要处理的点云子集的idx,axis为此次选择分割的轴，leaf_size叶子节点大小
 def kdtree_recursive_build(root, db, point_indices, axis, leaf_size):
     if root is None:
         root = Node(axis, None, None, None, point_indices)
@@ -106,7 +106,7 @@ def kdtree_recursive_build(root, db, point_indices, axis, leaf_size):
     return root
 
 
-# 功能：翻转一个kd树
+# 功能：遍历一个kd树
 # 输入：
 #     root：kd树
 #     depth: 当前深度
@@ -117,8 +117,9 @@ def traverse_kdtree(root: Node, depth, max_depth):
         max_depth[0] = depth[0]
 
     if root.is_leaf():
-        print(root)
+        print(depth[0]*"-"+str(root))
     else:
+        print(depth[0]*"-"+str(root))
         traverse_kdtree(root.left, depth, max_depth)
         traverse_kdtree(root.right, depth, max_depth)
 
