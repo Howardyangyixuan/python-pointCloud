@@ -76,7 +76,8 @@ class GMM(object):
         # 2.迭代
         for iter in range(self.max_iter):
             # 2.1 E step
-            rznk = self.update_rznk(data, pk, self.Mu, Var)
+            a = Mu
+            rznk = self.update_rznk(data, pk, a, Var)
             # 2.2 M step
             self.update_Mu(data,rznk)
             self.update_Var(data,Mu,rznk)
