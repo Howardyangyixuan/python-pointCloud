@@ -69,11 +69,17 @@ def ground_segmentation(data):
     # 指定置信率p以计算迭代次数N ~ 34
     p = 0.99
     N = int(np.log(1 - p) / np.log(1 - pow((1 - e), s)))
-    t = 0.2
+    t = 0.5
     # 2.开始算法
     # 可视化确定平面是否正确
     ax = plt.figure().add_subplot(111, projection='3d')
-    for n in range(1):
+    # 记录最多的参数
+    A_max = 0.0
+    B_max = 0.0
+    C_max = 0.0
+    cnt_max = 0
+    max_idx = 0
+    for n in range(30):
         # 2.1随机选取1个sample（3个点）对平面进行拟合
         idx = np.random.randint(0, data.shape[0], 3)
         sample = []
@@ -81,7 +87,7 @@ def ground_segmentation(data):
             sample.append(data[idx[i]])
             # 绘制点
             ax.scatter(data[idx[i]][0], data[idx[i]][1], data[idx[i]][2], s=100, color='#4daf4a')
-        # 获取主方向，即所求平面
+        # 获取两个主方向，通过两向量确定所求平面
         vectors = PCA(np.array(sample))[:, :2]
         # 绘制平面
         leftx = min(data[:, 0])
@@ -92,23 +98,50 @@ def ground_segmentation(data):
         Y = np.arange(lefty, righty, 5)
         X, Y = np.meshgrid(X, Y)
         # 求解平面方程
-        a1 = vectors[1][0] * vectors[2][1] - vectors[1][1] * vectors[2][0]
-        a2 = vectors[0][1] * vectors[2][0] - vectors[0][0] * vectors[2][1]
-        b = vectors[0][0] * vectors[1][1] - vectors[0][1] * vectors[1][0]
-        Z = a1 * X + a2 * Y + b
+        A = vectors[1][0] * vectors[2][1] - vectors[1][1] * vectors[2][0]
+        B = vectors[0][1] * vectors[2][0] - vectors[0][0] * vectors[2][1]
+        C = vectors[0][0] * vectors[1][1] - vectors[0][1] * vectors[1][0]
+        Z = A * X + B * Y + C
         ax.scatter(X, Y, Z, s=2, color='#ff7f00', alpha=0.2)
         # 原始点云
         # ax.scatter(data[:, 0], data[:, 1], data[:, 2], s=2, color='#377eb8', alpha=0.3)
         plt.show()
-    # 计算所有点到平面距离，根据t确定该模型对应的内点数和内点率
-    # 当内点率大于r或迭代次数大于N时，结束迭代，否则重复2 - 3
-    # 内点数最多的模型即为所求
-
+        # 2.2 计算所有点到平面距离，根据t确定该模型对应的内点数和内点率
+        cnt = 0
+        for i in range(data.shape[0]):
+            d = A * data[i][0] + B * data[i][1] + C - data[i][2]
+            area = np.sqrt(np.sum(np.square([A, B, 1])))
+            dist = abs(d) / area
+            if dist < t:
+                cnt += 1
+        # 2.3 当内点率大于r或迭代次数大于N时，结束迭代，否则重复2 - 3
+        if cnt > cnt_max:
+            cnt_max = cnt
+            A_max = A
+            B_max = B
+            C_max = C
+            max_idx = n
+        _r = cnt / data.shape[0]
+        if _r > r:
+            print("enough! %d",n)
+            break
+    # 2.4 内点数最多的模型即为所求,根据平面和t，对点云进行标注
+    segmented_cloud_list = []
+    for n in range(data.shape[0]):
+        d = A_max * data[n][0] + B_max * data[n][1] + C_max - data[n][2]
+        area = np.sqrt(np.sum(np.square([A_max, B_max, 1])))
+        dist = abs(d) / area
+        if dist < t:
+            segmented_cloud_list.append(1)
+        else:
+            segmented_cloud_list.append(0)
+    segmented_cloud = np.array(segmented_cloud_list)
+    # plot_clusters(segmented_cloud, np.zeros(segmented_cloud.shape[0], dtype=int))
     # 屏蔽结束
 
-    # print('origin data points num:', data.shape[0])
-    # print('segmented data points num:', segmengted_cloud.shape[0])
-    # return segmengted_cloud
+    print('origin data points num:', data.shape[0])
+    print('segmented data points num:', segmented_cloud.shape[0])
+    return segmented_cloud
 
 
 # 功能：从点云中提取聚类
@@ -146,14 +179,18 @@ def main():
     print(cat)
     cat = cat[0:]
     iteration_num = len(cat)
+    iteration_num = 1
 
     for i in range(iteration_num):
-        filename = os.path.join(root_dir, cat[i])
+        # filename = os.path.join(root_dir, cat[i])
+        filename =os.path.join(root_dir, '003000.bin')
         print('clustering pointcloud file:', filename)
 
         origin_points = read_velodyne_bin(filename)
-        # plot_clusters(origin_points, np.zeros(origin_points.shape[0], dtype=int))
-        ground_segmentation(data=origin_points)
+        # 显示原始点云
+        plot_clusters(origin_points, np.zeros(origin_points.shape[0], dtype=int))
+        label = ground_segmentation(data=origin_points)
+        plot_clusters(origin_points, label)
         # segmented_points = ground_segmentation(data=origin_points)
         # cluster_index = clustering(segmented_points)
 
