@@ -74,9 +74,10 @@ def plot_clusters(data, cluster_index):
     plt.show()
 
 def main():
-    root_dir = 'data/' # 数据集路径
+    root_dir = '../kitti' # 数据集路径
     cat = os.listdir(root_dir)
-    cat = cat[1:]
+    print(cat)
+    cat = cat[0:]
     iteration_num = len(cat)
 
     for i in range(iteration_num):
@@ -84,10 +85,11 @@ def main():
         print('clustering pointcloud file:', filename)
 
         origin_points = read_velodyne_bin(filename)
-        segmented_points = ground_segmentation(data=origin_points)
-        cluster_index = clustering(segmented_points)
+        plot_clusters(origin_points, np.zeros(origin_points.shape[0],dtype=int))
+        # segmented_points = ground_segmentation(data=origin_points)
+        # cluster_index = clustering(segmented_points)
 
-        plot_clusters(segmented_points, cluster_index)
+        # plot_clusters(segmented_points, cluster_index)
 
 if __name__ == '__main__':
     main()
