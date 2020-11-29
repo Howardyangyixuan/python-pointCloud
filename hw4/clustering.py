@@ -91,6 +91,7 @@ def ground_segmentation(data):
         X = np.arange(leftx, rightx, 5)
         Y = np.arange(lefty, righty, 5)
         X, Y = np.meshgrid(X, Y)
+        # 求解平面方程
         a1 = vectors[1][0] * vectors[2][1] - vectors[1][1] * vectors[2][0]
         a2 = vectors[0][1] * vectors[2][0] - vectors[0][0] * vectors[2][1]
         b = vectors[0][0] * vectors[1][1] - vectors[0][1] * vectors[1][0]
